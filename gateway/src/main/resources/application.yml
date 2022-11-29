@@ -1,0 +1,8 @@
+server:
+  port: 8080
+
+services:
+  ports:
+    reservation: 8070
+    library: 8060
+    rating: 8050
