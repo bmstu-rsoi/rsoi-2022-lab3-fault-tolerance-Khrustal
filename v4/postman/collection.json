@@ -1011,6 +1011,15 @@
 										],
 										"type": "text/javascript"
 									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"setTimeout(() => {}, 30000); "
+										],
+										"type": "text/javascript"
+									}
 								}
 							],
 							"request": {
@@ -1110,15 +1119,6 @@
 											"",
 											"    pm.environment.set(\"reservationUid\", response.reservationUid)",
 											"})"
-										],
-										"type": "text/javascript"
-									}
-								},
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"setTimeout(() => {}, 30000); "
 										],
 										"type": "text/javascript"
 									}

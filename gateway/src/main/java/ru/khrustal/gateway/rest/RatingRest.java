@@ -29,7 +29,7 @@ public class RatingRest {
         try {
             result = restTemplate.getForObject(url, UserRatingResponse.class);
         } catch (Exception e) {
-           return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new MessageDto(e.getMessage() + "\n|||||||\n" + e.getStackTrace()));
+           return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new MessageDto("Rating Service unavailable", e.getMessage()));
         }
         return ResponseEntity.ok(result);
     }
