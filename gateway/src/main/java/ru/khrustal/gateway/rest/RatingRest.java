@@ -7,7 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import ru.khrustal.dto.MessageDto;
 import ru.khrustal.dto.rating.UserRatingResponse;
+import ru.khrustal.dto.reservation.Message;
 
 @Controller
 @Slf4j
@@ -20,7 +22,7 @@ public class RatingRest {
     public static final String BASE_URL = "http://rating:8050/api/v1/rating";
 
     @GetMapping
-    public ResponseEntity<UserRatingResponse> getUserRating(@RequestHeader("X-User-Name") String username) {
+    public ResponseEntity<?> getUserRating(@RequestHeader("X-User-Name") String username) {
         RestTemplate restTemplate = new RestTemplate();
         String url = BASE_URL + "?username=" + username;
         UserRatingResponse result = null;
@@ -28,7 +30,7 @@ public class RatingRest {
             result = restTemplate.getForObject(url, UserRatingResponse.class);
         } catch (Exception e) {
            log.error(e.getMessage(), e);
-           return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+           return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new MessageDto("Rating Service unavailable"));
         }
         return ResponseEntity.ok(result);
     }

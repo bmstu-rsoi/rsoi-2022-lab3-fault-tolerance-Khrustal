@@ -1,5 +1,6 @@
 package ru.khrustal.gateway.rest;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import ru.khrustal.dto.MessageDto;
 import ru.khrustal.dto.reservation.ReturnBookRequest;
 import ru.khrustal.dto.reservation.TakeBookRequest;
 import ru.khrustal.dto.reservation.TakeBookResponse;
@@ -17,6 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Controller
+@Slf4j
 @RequestMapping("/api/v1/reservations")
 public class ReservationController {
 
@@ -29,7 +32,14 @@ public class ReservationController {
     public ResponseEntity<?> getUserReservedBooks(@RequestHeader("X-User-Name") String username) {
         RestTemplate restTemplate = new RestTemplate();
         String url = BASE_URL + "?username=" + username;
-        List<?> result = restTemplate.getForObject(url, List.class);
+        List<?> result = null;
+        try {
+            result = restTemplate.getForObject(url, List.class);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new MessageDto("Reservation Service unavailable"));
+        }
+
         return ResponseEntity.ok(result);
     }
 
@@ -40,8 +50,9 @@ public class ReservationController {
         HttpEntity<TakeBookRequest> rq = new HttpEntity<>(request, null);
         try {
             return restTemplate.postForEntity(BASE_URL + "?username=" + username, rq, TakeBookResponse.class);
-        } catch (HttpStatusCodeException e) {
-           return ResponseEntity.badRequest().body(e.getResponseBodyAsString());
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new MessageDto("Reservation Service unavailable"));
         }
     }
     @PostMapping("/{reservationUid}/return")
