@@ -1,8 +1,10 @@
 package ru.khrustal.gateway.rest;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -15,16 +17,19 @@ import ru.khrustal.dto.reservation.ReturnBookRequest;
 import ru.khrustal.dto.reservation.TakeBookRequest;
 import ru.khrustal.dto.reservation.TakeBookResponse;
 
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
 @Controller
 @Slf4j
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/reservations")
 public class ReservationController {
 
     @Value("${services.ports.reservation}")
     private String reservationPort;
+    private final TaskScheduler scheduler;
 
     public static final String BASE_URL = "http://reservation:8070/api/v1/reservations";
 
@@ -63,8 +68,20 @@ public class ReservationController {
         HttpEntity<ReturnBookRequest> rq = new HttpEntity<>(request, null);
         try {
             return restTemplate.postForEntity(BASE_URL + "/" + reservationUid + "/return" + "?username=" + username, rq, ReturnBookRequest.class);
-        } catch (HttpStatusCodeException e) {
-            return ResponseEntity.badRequest().body(e.getResponseBodyAsString());
+        } catch (Exception e) {
+            scheduler.schedule(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                restTemplate.postForEntity(BASE_URL + "/" + reservationUid + "/return" + "?username=" + username, rq, ReturnBookRequest.class);
+                            } catch (Exception e) {
+                                System.out.println("Dolbim");
+                                scheduler.schedule(this, new Date(System.currentTimeMillis() + 10000L));
+                            }
+                        }
+                    }, new Date());
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
     }
 }
