@@ -10,6 +10,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LibraryDto {
+    public LibraryDto(String uid) {
+        this.libraryUid = uid;
+    }
     private String libraryUid;
     private String name;
     private String address;

@@ -10,6 +10,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class BookDto {
+    public BookDto(String uid) {
+        this.bookUid = uid;
+    }
     private String bookUid;
     private String name;
     private String author;

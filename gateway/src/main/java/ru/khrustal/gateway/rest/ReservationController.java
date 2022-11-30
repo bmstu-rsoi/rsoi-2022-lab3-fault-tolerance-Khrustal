@@ -17,6 +17,7 @@ import ru.khrustal.dto.reservation.ReturnBookRequest;
 import ru.khrustal.dto.reservation.TakeBookRequest;
 import ru.khrustal.dto.reservation.TakeBookResponse;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -29,9 +30,28 @@ public class ReservationController {
 
     @Value("${services.ports.reservation}")
     private String reservationPort;
-    private final TaskScheduler scheduler;
+
 
     public static final String BASE_URL = "http://reservation:8070/api/v1/reservations";
+
+    private final TaskScheduler scheduler;
+    private static final Integer N = 2;
+    private Integer errorsNumber = 0;
+    private final Runnable healthCheck =
+            new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        RestTemplate restTemplate = new RestTemplate();
+                        restTemplate.getForEntity("http://reservation:8070/manage/health", ResponseEntity.class);
+                        log.info("healthCheck passed");
+                        errorsNumber = 0;
+                    } catch (Exception e) {
+                        log.error("healthCheck - errors: " + errorsNumber);
+                        scheduler.schedule(this, new Date(System.currentTimeMillis() + 10000L));
+                    }
+                }
+            };
 
     @GetMapping
     public ResponseEntity<?> getUserReservedBooks(@RequestHeader("X-User-Name") String username) {
@@ -39,10 +59,16 @@ public class ReservationController {
         String url = BASE_URL + "?username=" + username;
         List<?> result = null;
         try {
-            result = restTemplate.getForObject(url, List.class);
+            if (errorsNumber >= N) {
+                scheduler.schedule(healthCheck, new Date(System.currentTimeMillis() + 10000L));
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new MessageDto("Reservation Service unavailable", errorsNumber.toString()));
+            } else {
+                result = restTemplate.getForObject(url, List.class);
+                if (result != null) errorsNumber = 0;
+            }
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new MessageDto("Reservation Service unavailable"));
+            errorsNumber += 1;
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new MessageDto("Reservation Service unavailable", errorsNumber.toString()));
         }
 
         return ResponseEntity.ok(result);
@@ -54,9 +80,15 @@ public class ReservationController {
         RestTemplate restTemplate = new RestTemplate();
         HttpEntity<TakeBookRequest> rq = new HttpEntity<>(request, null);
         try {
-            return restTemplate.postForEntity(BASE_URL + "?username=" + username, rq, TakeBookResponse.class);
+            if (errorsNumber >= N) {
+                scheduler.schedule(healthCheck, new Date(System.currentTimeMillis() + 10000L));
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new MessageDto("Reservation Service unavailable"));
+            } else {
+                errorsNumber = 0;
+                return restTemplate.postForEntity(BASE_URL + "?username=" + username, rq, TakeBookResponse.class);
+            }
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            errorsNumber += 1;
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new MessageDto("Reservation Service unavailable"));
         }
     }
@@ -76,7 +108,6 @@ public class ReservationController {
                             try {
                                 restTemplate.postForEntity(BASE_URL + "/" + reservationUid + "/return" + "?username=" + username, rq, ReturnBookRequest.class);
                             } catch (Exception e) {
-                                System.out.println("Dolbim");
                                 scheduler.schedule(this, new Date(System.currentTimeMillis() + 10000L));
                             }
                         }
