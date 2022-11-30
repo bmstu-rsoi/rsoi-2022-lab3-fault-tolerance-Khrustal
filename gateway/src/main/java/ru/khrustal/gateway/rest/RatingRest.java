@@ -25,7 +25,7 @@ public class RatingRest {
     private String ratingPort;
     public static final String BASE_URL = "http://rating:8050/api/v1/rating";
     private final TaskScheduler scheduler;
-    private static final Integer N = 2;
+    private static final Integer N = 10;
     private Integer errorsNumber = 0;
     private final Runnable healthCheck =
             new Runnable() {

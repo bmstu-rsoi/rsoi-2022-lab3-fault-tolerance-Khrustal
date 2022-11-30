@@ -35,7 +35,7 @@ public class ReservationController {
     public static final String BASE_URL = "http://reservation:8070/api/v1/reservations";
 
     private final TaskScheduler scheduler;
-    private static final Integer N = 2;
+    private static final Integer N = 10;
     private Integer errorsNumber = 0;
     private final Runnable healthCheck =
             new Runnable() {

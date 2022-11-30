@@ -28,7 +28,7 @@ public class LibraryController {
     private String libraryPort;
     public static final String BASE_URL = "http://library:8060/api/v1/libraries/";
     private final TaskScheduler scheduler;
-    private static final Integer N = 2;
+    private static final Integer N = 10;
     private Integer errorsNumber = 0;
     private final Runnable healthCheck =
             new Runnable() {
